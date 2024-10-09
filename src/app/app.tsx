@@ -2,11 +2,12 @@
 import styles from './app.module.scss';
 
 import NxWelcome from './nx-welcome';
+import { DndKitApp } from '@sharedui';
 
 export function App() {
   return (
     <div>
-      <NxWelcome title="standalone" />
+      <DndKitApp />
     </div>
   );
 }

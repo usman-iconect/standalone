@@ -1,0 +1,3 @@
+interface Thrift {
+    some : number
+}
