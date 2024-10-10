@@ -1,4 +1,6 @@
 import React, { useState, FC } from 'react';
+import classNames from 'classnames';
+
 type MessageHolderProps = {
     htmlContent: string;
 };
@@ -356,4 +358,56 @@ const generateRandomText = (minWords: number, maxWords: number): string => {
         return loremIpsumWords[Math.floor(Math.random() * loremIpsumWords.length)];
     });
     return randomWords.join(' ');
+};
+
+
+interface AccordionItemProps {
+  title: string;
+  content: React.ReactNode;
+}
+
+const AccordionItem: React.FC<AccordionItemProps> = ({ title, content }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="accordion-item">
+      <div
+        className="accordion-title"
+        onClick={() => setIsOpen(!isOpen)}
+        style={{ cursor: 'pointer', padding: '10px', backgroundColor: '#f1f1f1' }}
+      >
+        <h3>{title}</h3>
+      </div>
+      <div
+        className={classNames('accordion-content', { 'open': isOpen })}
+        style={{
+          height: isOpen ? 'auto' : '0',
+          overflow: 'hidden',
+          transition: 'height 0.3s ease',
+          padding: isOpen ? '10px' : '0',
+        }}
+      >
+        {content}
+      </div>
+    </div>
+  );
+};
+
+const Sidebar: React.FC = () => {
+  return (
+    <div style={{ width: '250px', backgroundColor: '#333', color: '#fff', padding: '10px' }}>
+      <AccordionItem
+        title="Section 1"
+        content={<p>This is the content for section 1.</p>}
+      />
+      <AccordionItem
+        title="Section 2"
+        content={<p>This is the content for section 2.</p>}
+      />
+      <AccordionItem
+        title="Section 3"
+        content={<p>This is the content for section 3.</p>}
+      />
+    </div>
+  );
 };
