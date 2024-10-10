@@ -14,52 +14,35 @@ const MessageHolder: FC<MessageHolderProps> = ({ htmlContent }) => {
 
 type ToolbarProps = {
     onInsert: (htmlString: string) => void;
+    setHtmlContent: (htmlContent: string) => void;
 };
 
-const Toolbar: FC<ToolbarProps> = ({ onInsert }) => {
-    const handleInsert = (componentType: string) => {
-        let htmlString = '';
-
-        switch (componentType) {
-            case 'avatar':
-                htmlString = `<div class="msg-comp avatar">AB</div>`;
-                break;
-            case 'dateTime':
-                htmlString = `<div class="date-time">Date: ${new Date().toLocaleString()}</div>`;
-                break;
-            case 'message':
-                htmlString = `<div class="message">This is a message</div>`;
-                break;
-            case 'reactions':
-                htmlString = `<div class="reactions">👍 ❤️ 😂</div>`;
-                break;
-            default:
-                break;
-        }
-
-        onInsert(htmlString);
-    };
+const Toolbar: FC<ToolbarProps> = ({ onInsert, setHtmlContent }) => {
 
     return (
         <>
             <div className="toolbar">
-                <button onClick={() => handleInsert('avatar')}>Insert Avatar</button>
-                <MarginEditor />
-                <ContainerAlign />
+                <button onClick={() => {
+                    const htmlString = `<div class="msg-comp avatar">AB</div>`;
+                    onInsert(htmlString)
+                }}>Insert Avatar</button>
+                <MarginEditor setHtmlContent={setHtmlContent} />
+                <ContainerAlign setHtmlContent={setHtmlContent} />
+                <InsertMetaData setHtmlContent={setHtmlContent} />
 
             </div>
-            <div style={{display: 'flex', gap: '8px'}}>
+            <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={() => {
                     const selectedElement = document.querySelector('.selected') as HTMLElement;
                     if (selectedElement)
                         selectedElement.remove();
                 }}>Delete selected</button>
-                  <button onClick={() => {
-                    const wrapper = document.getElementById("wrapper");
-                    if (wrapper) {
-                        const children = wrapper.children;
+                <button onClick={() => {
+                    const selectedElement = document.querySelector('.selected') as HTMLElement;
+                    if (selectedElement) {
+                        const children = selectedElement.children;
                         for (let i = children.length; i > 0; i--) {
-                            wrapper.appendChild(children[i - 1]);
+                            selectedElement.appendChild(children[i - 1]);
                         }
                     }
                 }}>Flip Items</button>
@@ -68,7 +51,7 @@ const Toolbar: FC<ToolbarProps> = ({ onInsert }) => {
     );
 };
 
-const MarginEditor: React.FC = () => {
+const MarginEditor: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
     const [marginSide, setMarginSide] = useState<string>('marginTop');
     const [marginValue, setMarginValue] = useState<number>(0);
 
@@ -78,6 +61,7 @@ const MarginEditor: React.FC = () => {
         if (selectedElement) {
             selectedElement.style[marginSide as any] = `${value}px`;
         }
+        setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
     };
 
     // Handle slider/input changes
@@ -88,7 +72,7 @@ const MarginEditor: React.FC = () => {
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = parseInt(e.target.value) || 0;
+        const value = parseInt(e.target.value);
         setMarginValue(value);
         updateMargin(value);
     };
@@ -111,7 +95,6 @@ const MarginEditor: React.FC = () => {
                 Adjust Margin (px):
                 <input
                     type="range"
-                    min="0"
                     max="100"
                     value={marginValue}
                     onChange={handleSliderChange}
@@ -131,7 +114,7 @@ const MarginEditor: React.FC = () => {
     );
 };
 
-const ContainerAlign: React.FC = () => {
+const ContainerAlign: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
     const [vAlign, setVAlign] = useState<string>('flex-start');
     const [hAlign, setHAlign] = useState<string>('flex-start');
     const [direction, setDirection] = useState<string>('row');
@@ -145,7 +128,9 @@ const ContainerAlign: React.FC = () => {
                     <option value="flex-start">Start</option>
                     <option value="flex-end">End</option>
                     <option value="center">Center</option>
-
+                    <option value="space-between">Space Between</option>
+                    <option value="space-around">Space Around</option>
+                    <option value="space-evenly">Space Evenly</option>
                 </select>
             </label>
             <br />
@@ -155,6 +140,9 @@ const ContainerAlign: React.FC = () => {
                     <option value="flex-start">Start</option>
                     <option value="flex-end">End</option>
                     <option value="center">Center</option>
+                    <option value="space-between">Space Between</option>
+                    <option value="space-around">Space Around</option>
+                    <option value="space-evenly">Space Evenly</option>
                 </select>
             </label>
             <br />
@@ -172,8 +160,65 @@ const ContainerAlign: React.FC = () => {
                     selectedElement.style.justifyContent = hAlign;
                     selectedElement.style.alignItems = vAlign;
                     selectedElement.style.flexDirection = direction;
+                    setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
                 }
             }}>Change</button>
+        </div>
+    );
+};
+
+const InsertMetaData: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
+    const [data, setData] = useState<string>('time');
+    const [location, setLocation] = useState<string>('top');
+
+    function getTextBasedOnDataType() {
+        if (data === 'date') {
+            return new Date().toLocaleDateString();
+        } else if (data === 'time') {
+            return new Date().toLocaleTimeString();
+        } else {
+            return 'John Doe';
+        }
+    }
+
+    return (
+        <div>
+            <h3>Insert Meta Data</h3>
+            <label>
+                Data Type:
+                <select value={data} onChange={(e) => setData(e.target.value)}>
+                    <option value="date">Date</option>
+                    <option value="time">Time</option>
+                    <option value="name">Name</option>
+                </select>
+            </label>
+            <br />
+            <label>
+                Location:
+                <select value={location} onChange={(e) => setLocation(e.target.value)}>
+                    <option value="top">Top</option>
+                    <option value="bottom">Bottom</option>
+                    <option value="outer-top">Outer Top</option>
+                    <option value="outer-bottom">Outer Bottom</option>
+                </select>
+            </label>
+            <br />
+            <button onClick={() => {
+                const wrapper = document.querySelector('#message-box-outer') as HTMLElement;
+                if (wrapper) {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(wrapper.innerHTML, 'text/html');
+                    const newElement = document.createElement('span');
+                    newElement.innerText = getTextBasedOnDataType();
+                    newElement.style.width = 'max-content';
+                    const locationContainer = doc.getElementById(`container-${location}`);
+                    if (locationContainer) {
+                        locationContainer.appendChild(newElement);
+                    }
+                    wrapper.innerHTML = doc.body.innerHTML;
+                    setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
+                }
+            }}>Insert</button>
         </div>
     );
 };
@@ -181,9 +226,15 @@ const ContainerAlign: React.FC = () => {
 const ComponentBuilder: React.FC = () => {
     const [htmlContent, setHtmlContent] = useState<string>(
         `
-        <div id="wrapper" className="wrapper" style="border: 1px solid #ccc; padding: 16px; position: relative; display: flex;">
-            <div style="position: relative; max-width: 300px; padding: 15px; background-color: #e0f7fa; border-radius: 15px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);">
-                <p id="msg-container" style="margin: 0; color: #333;">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s</p>
+        <div id="wrapper" class="wrapper" style="border: 1px solid #ccc; padding: 16px; position: relative; display: flex;">
+            <div id="message-box-outer">
+                <div id="container-outer-top" class="placeholder" style="display: flex"></div>
+                <div id="message-box" style="position: relative; max-width: 300px; padding: 8px; background-color: #e0f7fa; border-radius: 15px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);">
+                    <div id="container-top" class="placeholder" style="display: flex"></div>
+                    <p id="msg-container" style="margin: 0; color: #333;">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s</p>
+                    <div id="container-bottom" class="placeholder" style="display: flex"></div>
+                </div>
+                <div id="container-outer-bottom" class="placeholder" style="display: flex"></div>
             </div>
         </div>
         `
@@ -217,11 +268,8 @@ const ComponentBuilder: React.FC = () => {
             const target = e.target as HTMLElement;
 
             if (wrapper && wrapper.contains(target)) {
-                console.log("Clicked inside wrapper:", target);
                 removeAllPreviousSelections();
                 target.classList.add("selected");
-            } else {
-                console.log("Clicked outside wrapper");
             }
         };
 
@@ -249,10 +297,9 @@ const ComponentBuilder: React.FC = () => {
         container.style.padding = "16px"
     };
 
-
     return (
         <div className="component-builder" style={{ display: 'flex' }}>
-            <Toolbar onInsert={handleInsert} />
+            <Toolbar onInsert={handleInsert} setHtmlContent={setHtmlContent} />
             <div className="preview" style={{ marginLeft: '20px' }}>
                 <MessageHolder htmlContent={htmlContent} />
             </div>
@@ -261,13 +308,15 @@ const ComponentBuilder: React.FC = () => {
                 <div style={{
                     border: '1px dashed black',
                     width: '100%',
-                    height: '500px',
+                    height: '345px',
                     display: 'flex',
                     flexDirection: 'column',
+                    padding: '16px 0',
+                    gap: '16px',
                     overflow: 'auto'
                 }}>
                     {saved.map((html, i) => {
-                        const span = <span style={{ marginTop: '16px', width: 'max-content' }} key={i} dangerouslySetInnerHTML={{ __html: html }} />
+                        const span = <span style={{ width: 'max-content' }} key={i} dangerouslySetInnerHTML={{ __html: html }} />
                         return span
                     })}
                 </div>
