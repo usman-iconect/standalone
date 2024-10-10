@@ -221,7 +221,56 @@ const ChangeFlush: React.FC<{ setHtmlContent: (htmlContent: string) => void }> =
                     messageBox.style.borderRadius = `${top}px ${right}px ${bottom}px ${left}px`;
                     setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
                 }
-             }}>
+            }}>
+                Change
+            </button>
+        </div>
+    )
+}
+
+const ChangeRadius: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
+    const [marginValue, setMarginValue] = useState<number>(0);
+
+    // Handle slider/input changes
+    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseInt(e.target.value);
+        setMarginValue(value);
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseInt(e.target.value);
+        setMarginValue(value);
+    };
+
+    return (
+        <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+            <label>
+                Adjust Radius (px):
+                <input
+                    type="range"
+                    max="100"
+                    value={marginValue}
+                    onChange={handleSliderChange}
+                />
+            </label>
+            <br />
+
+            <label>
+                Manual Input (px):
+                <input
+                    type="number"
+                    value={marginValue}
+                    onChange={handleInputChange}
+                />
+            </label>
+            <br />
+            <button onClick={() => {
+                const selected = document.querySelector('.selected') as HTMLElement;
+                if (selected) {
+                    selected.style.borderRadius = `${marginValue}px`;
+                    setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
+                }
+            }}>
                 Change
             </button>
         </div>
@@ -465,6 +514,13 @@ const Sidebar: React.FC<ToolbarProps> = ({ onInsert, setHtmlContent }) => {
                 id={"5"}
                 title="Change Flush"
                 content={<ChangeFlush setHtmlContent={setHtmlContent} />}
+            />
+            <AccordionItem
+                setOpened={setOpened}
+                opened={opened}
+                id={"7"}
+                title="Change Radius"
+                content={<ChangeRadius setHtmlContent={setHtmlContent} />}
             />
         </div>
     );
