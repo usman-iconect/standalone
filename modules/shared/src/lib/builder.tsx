@@ -19,40 +19,6 @@ type ToolbarProps = {
     setHtmlContent: (htmlContent: string) => void;
 };
 
-const Toolbar: FC<ToolbarProps> = ({ onInsert, setHtmlContent }) => {
-
-    return (
-        <>
-            <div className="toolbar">
-                <button onClick={() => {
-                    const htmlString = `<div class="msg-comp avatar">AB</div>`;
-                    onInsert(htmlString)
-                }}>Insert Avatar</button>
-                <MarginEditor setHtmlContent={setHtmlContent} />
-                <ContainerAlign setHtmlContent={setHtmlContent} />
-                <InsertMetaData setHtmlContent={setHtmlContent} />
-
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => {
-                    const selectedElement = document.querySelector('.selected') as HTMLElement;
-                    if (selectedElement)
-                        selectedElement.remove();
-                }}>Delete selected</button>
-                <button onClick={() => {
-                    const selectedElement = document.querySelector('.selected') as HTMLElement;
-                    if (selectedElement) {
-                        const children = selectedElement.children;
-                        for (let i = children.length; i > 0; i--) {
-                            selectedElement.appendChild(children[i - 1]);
-                        }
-                    }
-                }}>Flip Items</button>
-            </div>
-        </>
-    );
-};
-
 const MarginEditor: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
     const [marginSide, setMarginSide] = useState<string>('marginTop');
     const [marginValue, setMarginValue] = useState<number>(0);
@@ -81,7 +47,6 @@ const MarginEditor: React.FC<{ setHtmlContent: (htmlContent: string) => void }> 
 
     return (
         <div>
-            <h4>Margin Editor</h4>
             <label>
                 Select Margin Side:
                 <select value={marginSide} onChange={(e) => setMarginSide(e.target.value)}>
@@ -123,7 +88,6 @@ const ContainerAlign: React.FC<{ setHtmlContent: (htmlContent: string) => void }
 
     return (
         <div>
-            <h3>Change Alignment</h3>
             <label>
                 Select Justify Content:
                 <select value={vAlign} onChange={(e) => setVAlign(e.target.value)}>
@@ -185,7 +149,6 @@ const InsertMetaData: React.FC<{ setHtmlContent: (htmlContent: string) => void }
 
     return (
         <div>
-            <h3>Insert Meta Data</h3>
             <label>
                 Data Type:
                 <select value={data} onChange={(e) => setData(e.target.value)}>
@@ -231,6 +194,39 @@ const InsertMetaData: React.FC<{ setHtmlContent: (htmlContent: string) => void }
         </div>
     );
 };
+
+const ChangeFlush: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
+    const [data, setData] = React.useState("top-left")
+    return (
+        <div style={{ display: 'flex', gap: '8px' }}>
+            <label>
+                {/* top-left | top-right | bottom-right | bottom-left */}
+                Flush Position:
+                <select value={data} onChange={(e) => setData(e.target.value)}>
+                    <option value="top-left">Top Left</option>
+                    <option value="top-right">Top Right</option>
+                    <option value="bottom-right">Bottom Right</option>
+                    <option value="bottom-left">Bottom Left</option>
+                </select>
+            </label>
+            <br />
+            <button onClick={() => {
+                const messageBox = document.querySelector('#message-box') as HTMLElement;
+                if (messageBox) {
+                    const currentBorderRadius = 15
+                    const top = data === 'top-left' ? '0' : currentBorderRadius;
+                    const right = data === 'top-right' ? '0' : currentBorderRadius;
+                    const bottom = data === 'bottom-right' ? '0' : currentBorderRadius;
+                    const left = data === 'bottom-left' ? '0' : currentBorderRadius;
+                    messageBox.style.borderRadius = `${top}px ${right}px ${bottom}px ${left}px`;
+                    setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
+                }
+             }}>
+                Change
+            </button>
+        </div>
+    )
+}
 
 const ComponentBuilder: React.FC = () => {
     const [htmlContent, setHtmlContent] = useState<string>(
@@ -311,27 +307,31 @@ const ComponentBuilder: React.FC = () => {
 
     return (
         <div className="component-builder" style={{ display: 'flex' }}>
-            <Toolbar onInsert={handleInsert} setHtmlContent={setHtmlContent} />
-            <div className="preview" style={{ marginLeft: '20px' }}>
-                <MessageHolder htmlContent={htmlContent} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: "center" }}>
-                <button style={{ marginTop: '16px' }} onClick={exportHtml}>Add to Thread</button>
-                <div style={{
-                    border: '1px dashed black',
-                    width: '100%',
-                    height: '345px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '16px 0',
-                    gap: '16px',
-                    overflow: 'auto'
-                }}>
-                    {saved.map((html, i) => {
-                        const span = <span style={{ width: 'max-content' }} key={i} dangerouslySetInnerHTML={{ __html: html }} />
-                        return span
-                    })}
+            <div style={{ display: 'flex', flexDirection: 'column', width: '50%', alignContent: 'space-between' }}>
+                <div style={{ display: 'flex' }}>
+                    <div className="preview" style={{ marginLeft: '20px' }}>
+                        <MessageHolder htmlContent={htmlContent} />
+                    </div>
+                    <Sidebar onInsert={handleInsert} setHtmlContent={setHtmlContent} />
                 </div>
+                <div>
+                    <button style={{ marginTop: '16px' }} onClick={exportHtml}>Add to Thread</button>
+                </div>
+            </div>
+            <div style={{
+                border: '1px dashed black',
+                width: '50%',
+                height: '850px',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '16px',
+                gap: '16px',
+                overflow: 'auto'
+            }}>
+                {saved.map((html, i) => {
+                    const span = <span style={{ width: 'max-content' }} key={i} dangerouslySetInnerHTML={{ __html: html }} />
+                    return span
+                })}
             </div>
         </div>
     );
@@ -362,52 +362,110 @@ const generateRandomText = (minWords: number, maxWords: number): string => {
 
 
 interface AccordionItemProps {
-  title: string;
-  content: React.ReactNode;
+    title: string;
+    content: React.ReactNode;
+    setOpened: (id: string) => void;
+    id: string;
+    opened: string;
 }
 
-const AccordionItem: React.FC<AccordionItemProps> = ({ title, content }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const AccordionItem: React.FC<AccordionItemProps> = ({ title, content, setOpened, id, opened }) => {
+    const [isOpen, setIsOpen] = useState(false);
 
-  return (
-    <div className="accordion-item">
-      <div
-        className="accordion-title"
-        onClick={() => setIsOpen(!isOpen)}
-        style={{ cursor: 'pointer', padding: '10px', backgroundColor: '#f1f1f1' }}
-      >
-        <h3>{title}</h3>
-      </div>
-      <div
-        className={classNames('accordion-content', { 'open': isOpen })}
-        style={{
-          height: isOpen ? 'auto' : '0',
-          overflow: 'hidden',
-          transition: 'height 0.3s ease',
-          padding: isOpen ? '10px' : '0',
-        }}
-      >
-        {content}
-      </div>
-    </div>
-  );
+    return (
+        <div className="accordion-item">
+            <div
+                className="accordion-title"
+                onClick={() => {
+                    setOpened(isOpen ? "" : id)
+                    setIsOpen(!isOpen)
+                }}
+                style={{ cursor: 'pointer', padding: '10px', backgroundColor: '#f1f1f1' }}
+            >
+                <h3 style={{ color: 'black' }}>{title}</h3>
+            </div>
+            <div
+                className={classNames('accordion-content', { 'open': (isOpen && opened === id) })}
+                style={{
+                    height: (isOpen && opened === id) ? 'auto' : '0',
+                    overflow: 'hidden',
+                    transition: 'height 0.3s ease',
+                    padding: (isOpen && opened === id) ? '10px' : '0',
+                }}
+            >
+                {content}
+            </div>
+        </div>
+    );
 };
 
-const Sidebar: React.FC = () => {
-  return (
-    <div style={{ width: '250px', backgroundColor: '#333', color: '#fff', padding: '10px' }}>
-      <AccordionItem
-        title="Section 1"
-        content={<p>This is the content for section 1.</p>}
-      />
-      <AccordionItem
-        title="Section 2"
-        content={<p>This is the content for section 2.</p>}
-      />
-      <AccordionItem
-        title="Section 3"
-        content={<p>This is the content for section 3.</p>}
-      />
-    </div>
-  );
+const Sidebar: React.FC<ToolbarProps> = ({ onInsert, setHtmlContent }) => {
+    const [opened, setOpened] = useState<string>("")
+    return (
+        <div style={{ width: '300px', padding: '10px' }}>
+            <AccordionItem
+                setOpened={setOpened}
+                opened={opened}
+                id={"1"}
+                title="Insert Items"
+                content={<button onClick={() => {
+                    const htmlString = `<div class="msg-comp avatar">AB</div>`;
+                    onInsert(htmlString)
+                }}>Insert Avatar</button>}
+            />
+            <AccordionItem
+                setOpened={setOpened}
+                opened={opened}
+                id={"2"}
+                title="Margin Editor"
+                content={<MarginEditor setHtmlContent={setHtmlContent} />}
+            />
+            <AccordionItem
+                setOpened={setOpened}
+                opened={opened}
+                id={"3"}
+                title="Change Alignment"
+                content={<ContainerAlign setHtmlContent={setHtmlContent} />
+                }
+            />
+            <AccordionItem
+                setOpened={setOpened}
+                opened={opened}
+                id={"4"}
+                title="Insert Meta Data"
+                content={
+                    <InsertMetaData setHtmlContent={setHtmlContent} />}
+            />
+            <AccordionItem
+                setOpened={setOpened}
+                opened={opened}
+                id={"5"}
+                title="Quick Actions"
+                content={
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => {
+                            const selectedElement = document.querySelector('.selected') as HTMLElement;
+                            if (selectedElement)
+                                selectedElement.remove();
+                        }}>Delete selected</button>
+                        <button onClick={() => {
+                            const selectedElement = document.querySelector('.selected') as HTMLElement;
+                            if (selectedElement) {
+                                const children = selectedElement.children;
+                                for (let i = children.length; i > 0; i--) {
+                                    selectedElement.appendChild(children[i - 1]);
+                                }
+                            }
+                        }}>Flip Items</button>
+                    </div>}
+            />
+            <AccordionItem
+                setOpened={setOpened}
+                opened={opened}
+                id={"5"}
+                title="Change Flush"
+                content={<ChangeFlush setHtmlContent={setHtmlContent} />}
+            />
+        </div>
+    );
 };

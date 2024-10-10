@@ -22,7 +22,6 @@
 
 .component-builder {
   display: flex;
-  flex-direction: column;
 }
 
 button {
@@ -50,6 +49,7 @@ body {
 
 .accordion-item {
   border-bottom: 1px solid #444;
+  color: black;
 }
 
 .accordion-title h3 {
