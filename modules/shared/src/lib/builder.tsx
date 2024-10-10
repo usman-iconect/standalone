@@ -198,6 +198,7 @@ const InsertMetaData: React.FC<{ setHtmlContent: (htmlContent: string) => void }
                 <select value={location} onChange={(e) => setLocation(e.target.value)}>
                     <option value="top">Top</option>
                     <option value="bottom">Bottom</option>
+                    <option value="right-corner">Right Corner</option>
                     <option value="outer-top">Outer Top</option>
                     <option value="outer-bottom">Outer Bottom</option>
                 </select>
@@ -214,6 +215,12 @@ const InsertMetaData: React.FC<{ setHtmlContent: (htmlContent: string) => void }
                     const locationContainer = doc.getElementById(`container-${location}`);
                     if (locationContainer) {
                         locationContainer.appendChild(newElement);
+                        if (location.includes('corner')) {
+                            const adjuster = doc.getElementById(`container-${location}-adjuster`);
+                            if (adjuster) {
+                                adjuster.innerHTML = locationContainer.innerHTML;
+                            }
+                        }
                     }
                     wrapper.innerHTML = doc.body.innerHTML;
                     setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
@@ -231,8 +238,9 @@ const ComponentBuilder: React.FC = () => {
                 <div id="container-outer-top" class="placeholder" style="display: flex"></div>
                 <div id="message-box" style="position: relative; max-width: 300px; padding: 8px; background-color: #e0f7fa; border-radius: 15px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);">
                     <div id="container-top" class="placeholder" style="display: flex"></div>
-                    <p id="msg-container" style="margin: 0; color: #333;">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s</p>
+                    <p id="msg-container" style="margin: 0; color: #333;">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s<span id="container-right-corner-adjuster" style="visibility: hidden; padding-left:8px;"></span></p>
                     <div id="container-bottom" class="placeholder" style="display: flex"></div>
+                    <div id="container-right-corner" style="position: absolute; bottom: 8px; right: 8px;"></div>
                 </div>
                 <div id="container-outer-bottom" class="placeholder" style="display: flex"></div>
             </div>
@@ -290,8 +298,10 @@ const ComponentBuilder: React.FC = () => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(exportedHtml, 'text/html');
         const msgElem = doc.getElementById("msg-container")
-        if (msgElem)
-            msgElem.innerText = generateRandomText(2, 50)
+        if (msgElem) {
+            const spanElement = msgElem.querySelector('span');
+            msgElem.innerHTML = generateRandomText(2, 20) + spanElement?.outerHTML
+        }
         setSaved([...saved, doc.body.innerHTML])
         container.style.border = "1px solid #ccc"
         container.style.padding = "16px"
