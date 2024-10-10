@@ -41,15 +41,30 @@ const Toolbar: FC<ToolbarProps> = ({ onInsert }) => {
     };
 
     return (
-        <div className="toolbar">
-            <button onClick={() => handleInsert('avatar')}>Insert Avatar</button>
-            <button onClick={() => handleInsert('dateTime')}>Insert DateTime</button>
-            <button onClick={() => handleInsert('message')}>Insert Message</button>
-            <button onClick={() => handleInsert('reactions')}>Insert Reactions</button>
+        <>
+            <div className="toolbar">
+                <button onClick={() => handleInsert('avatar')}>Insert Avatar</button>
+                <MarginEditor />
+                <ContainerAlign />
 
-            <MarginEditor />
-
-        </div>
+            </div>
+            <div style={{display: 'flex', gap: '8px'}}>
+                <button onClick={() => {
+                    const selectedElement = document.querySelector('.selected') as HTMLElement;
+                    if (selectedElement)
+                        selectedElement.remove();
+                }}>Delete selected</button>
+                  <button onClick={() => {
+                    const wrapper = document.getElementById("wrapper");
+                    if (wrapper) {
+                        const children = wrapper.children;
+                        for (let i = children.length; i > 0; i--) {
+                            wrapper.appendChild(children[i - 1]);
+                        }
+                    }
+                }}>Flip Items</button>
+            </div>
+        </>
     );
 };
 
@@ -80,7 +95,7 @@ const MarginEditor: React.FC = () => {
 
     return (
         <div>
-            <h3>Margin Editor</h3>
+            <h4>Margin Editor</h4>
             <label>
                 Select Margin Side:
                 <select value={marginSide} onChange={(e) => setMarginSide(e.target.value)}>
@@ -116,18 +131,65 @@ const MarginEditor: React.FC = () => {
     );
 };
 
+const ContainerAlign: React.FC = () => {
+    const [vAlign, setVAlign] = useState<string>('flex-start');
+    const [hAlign, setHAlign] = useState<string>('flex-start');
+    const [direction, setDirection] = useState<string>('row');
+
+    return (
+        <div>
+            <h3>Change Alignment</h3>
+            <label>
+                Select Justify Content:
+                <select value={vAlign} onChange={(e) => setVAlign(e.target.value)}>
+                    <option value="flex-start">Start</option>
+                    <option value="flex-end">End</option>
+                    <option value="center">Center</option>
+
+                </select>
+            </label>
+            <br />
+            <label>
+                Select Align Items:
+                <select value={hAlign} onChange={(e) => setHAlign(e.target.value)}>
+                    <option value="flex-start">Start</option>
+                    <option value="flex-end">End</option>
+                    <option value="center">Center</option>
+                </select>
+            </label>
+            <br />
+            <label>
+                Direction:
+                <select value={direction} onChange={(e) => setDirection(e.target.value)}>
+                    <option value="row">Row</option>
+                    <option value="column">Column</option>
+                </select>
+            </label>
+            <br />
+            <button onClick={() => {
+                const selectedElement = document.querySelector('.selected') as HTMLElement;
+                if (selectedElement) {
+                    selectedElement.style.justifyContent = hAlign;
+                    selectedElement.style.alignItems = vAlign;
+                    selectedElement.style.flexDirection = direction;
+                }
+            }}>Change</button>
+        </div>
+    );
+};
+
 const ComponentBuilder: React.FC = () => {
     const [htmlContent, setHtmlContent] = useState<string>(
         `
-        <div id="wrapper" className="wrapper" style="border: 2px dashed black; padding: 16px; position: relative; display: flex;">
+        <div id="wrapper" className="wrapper" style="border: 1px solid #ccc; padding: 16px; position: relative; display: flex;">
             <div style="position: relative; max-width: 300px; padding: 15px; background-color: #e0f7fa; border-radius: 15px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);">
                 <p id="msg-container" style="margin: 0; color: #333;">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s</p>
             </div>
         </div>
         `
     );
-    const [saved, setSaved] = useState<string[]>([])
 
+    const [saved, setSaved] = useState<string[]>([])
 
     const handleInsert = (htmlString: string) => {
         const parser = new DOMParser();
@@ -140,16 +202,38 @@ const ComponentBuilder: React.FC = () => {
         setHtmlContent(doc.body.innerHTML);
     };
 
-    React.useEffect(() => {
-        document.addEventListener("click", (e) => {
-            const target = e.target as HTMLElement;
-            if (target?.classList.contains("msg-comp")) {
-                target.classList.add("selected");
+    function removeAllPreviousSelections() {
+        const selectedList = document.getElementsByClassName('selected');
+        if (selectedList.length > 0) {
+            for (let i = 0; i < selectedList.length; i++) {
+                selectedList[i].classList.remove('selected');
             }
-        });
-    }, [])
+        }
+    }
+
+    React.useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            const wrapper = document.getElementById("wrapper");
+            const target = e.target as HTMLElement;
+
+            if (wrapper && wrapper.contains(target)) {
+                console.log("Clicked inside wrapper:", target);
+                removeAllPreviousSelections();
+                target.classList.add("selected");
+            } else {
+                console.log("Clicked outside wrapper");
+            }
+        };
+
+        document.addEventListener("click", handleClick);
+
+        return () => {
+            document.removeEventListener("click", handleClick);
+        };
+    }, []);
 
     const exportHtml = () => {
+        removeAllPreviousSelections()
         const container = document.getElementById('wrapper');
         if (!container) return;
         container.style.border = "none";
@@ -161,8 +245,7 @@ const ComponentBuilder: React.FC = () => {
         if (msgElem)
             msgElem.innerText = generateRandomText(2, 50)
         setSaved([...saved, doc.body.innerHTML])
-        console.log(exportedHtml)
-        container.style.border = "2px dashed black"
+        container.style.border = "1px solid #ccc"
         container.style.padding = "16px"
     };
 
@@ -175,16 +258,16 @@ const ComponentBuilder: React.FC = () => {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: "center" }}>
                 <button style={{ marginTop: '16px' }} onClick={exportHtml}>Add to Thread</button>
-                <div style={{ 
-                    border: '1px dashed black', 
-                    width: '100%', 
+                <div style={{
+                    border: '1px dashed black',
+                    width: '100%',
                     height: '500px',
-                    display: 'flex', 
+                    display: 'flex',
                     flexDirection: 'column',
                     overflow: 'auto'
-                     }}>
+                }}>
                     {saved.map((html, i) => {
-                        const span = <span style={{ marginTop: '16px' }} key={i} dangerouslySetInnerHTML={{ __html: html }} />
+                        const span = <span style={{ marginTop: '16px', width: 'max-content' }} key={i} dangerouslySetInnerHTML={{ __html: html }} />
                         return span
                     })}
                 </div>

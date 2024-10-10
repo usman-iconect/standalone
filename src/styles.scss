@@ -1,5 +1,4 @@
 .message-holder {
-  border: 1px solid #ccc;
   padding: 10px;
   width: 100%;
   max-width: 600px;
@@ -11,9 +10,11 @@
 
 .toolbar {
   display: flex;
+  gap: 16px;
   margin-left: 20px;
+  margin-bottom: 20px;
   button {
-    height: 50px;
+    height: 40px;
     width: 120px;
     margin: 8px;
   }
@@ -40,5 +41,5 @@ button {
 }
 
 .selected {
-  border: 2px solid black;
+  border: 2px solid black !important;
 }
