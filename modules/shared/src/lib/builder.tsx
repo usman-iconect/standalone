@@ -651,7 +651,7 @@ const Sidebar: React.FC<ToolbarProps> = ({ onInsert, setHtmlContent }) => {
                 id={"1"}
                 title="Insert Items"
                 content={<button onClick={() => {
-                    const htmlString = `<div class="msg-comp avatar">AB</div>`;
+                    const htmlString = `<div style="width: 50px; height: 50px; border-radius: 50%; background-color: #ccc; display: flex; justify-content: center; align-items: center;" class="msg-comp avatar">AB</div>`;
                     onInsert(htmlString)
                 }}>Insert Avatar</button>}
             />
