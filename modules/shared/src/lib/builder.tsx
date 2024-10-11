@@ -1,5 +1,6 @@
 import React, { useState, FC } from 'react';
 import classNames from 'classnames';
+import { SketchPicker } from 'react-color'
 
 type MessageHolderProps = {
     htmlContent: string;
@@ -278,8 +279,7 @@ const ChangeRadius: React.FC<{ setHtmlContent: (htmlContent: string) => void }> 
 }
 
 const ComponentBuilder: React.FC = () => {
-    const [htmlContent, setHtmlContent] = useState<string>(
-        `
+    const html = `
         <div id="wrapper" class="wrapper" style="border: 1px solid #ccc; padding: 16px; position: relative; display: flex;">
             <div id="message-box-outer">
                 <div id="container-outer-top" class="placeholder" style="display: flex"></div>
@@ -293,7 +293,7 @@ const ComponentBuilder: React.FC = () => {
             </div>
         </div>
         `
-    );
+    const [htmlContent, setHtmlContent] = useState<string>(html);
 
     const [saved, setSaved] = useState<string[]>([])
 
@@ -365,6 +365,9 @@ const ComponentBuilder: React.FC = () => {
                 </div>
                 <div>
                     <button style={{ marginTop: '16px' }} onClick={exportHtml}>Add to Thread</button>
+                    <button style={{ marginTop: '16px', marginLeft: '16px' }} onClick={() => {
+                        setHtmlContent(html)
+                    }}>Reset</button>
                 </div>
             </div>
             <div style={{
@@ -385,6 +388,112 @@ const ComponentBuilder: React.FC = () => {
         </div>
     );
 };
+
+const ColorEditor: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
+    const [color, setColor] = useState<string>('#000000');
+    const [selectedOption, setSelectedOption] = useState<string>('color');
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <SketchPicker
+                onChangeComplete={(color) => {
+                    setColor(color.hex)
+                }}
+                color={color}
+            />
+            <div>
+                <label>
+                    <input
+                        type="radio"
+                        value="color"
+                        checked={selectedOption === 'color'}
+                        onChange={(e) => setSelectedOption(e.target.value)}
+                    />
+                    Font Color
+                </label>
+                <label>
+                    <input
+                        type="radio"
+                        value="backgroundColor"
+                        checked={selectedOption === 'backgroundColor'}
+                        onChange={(e) => setSelectedOption(e.target.value)}
+                    />
+                    Background Color
+                </label>
+            </div>
+            <button onClick={() => {
+                const selected = document.querySelector('.selected') as HTMLElement;
+                if (selected) {
+                    if (selectedOption === 'color') {
+                        selected.style.color = color;
+                    }
+                    else {
+                        selected.style.backgroundColor = color;
+                    }
+                    setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
+                }
+            }}>
+                Change
+            </button>
+        </div>
+    )
+}
+
+const FontEditor: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
+    const [fontSize, setFontSize] = useState<string>('16');
+    const [fontWeight, setWeight] = useState<number>(400);
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label>
+                Font Size (px):
+                <input
+                    type="range"
+                    min="2"
+                    max="30"
+                    value={fontSize}
+                    onChange={(e) => setFontSize(e.target.value)}
+                />
+            </label>
+            <br />
+            <label>
+                Font Size Input (px):
+                <input
+                    type="number"
+                    value={fontSize}
+                    onChange={(e) => setFontSize(e.target.value)}
+                />
+            </label>
+            <label>
+                Font Weight:
+                <input
+                    type="range"
+                    min="100"
+                    max="1000"
+                    value={fontWeight}
+                    onChange={(e) => setWeight(parseInt(e.target.value))}
+                />
+            </label>
+            <br />
+            <label>
+                Font Weight:
+                <input
+                    type="number"
+                    value={fontWeight}
+                    onChange={(e) => setWeight(parseInt(e.target.value))}
+                />
+            </label>
+            <button onClick={() => {
+                const selected = document.querySelector('.selected') as HTMLElement;
+                if (selected) {
+                    selected.style.fontSize = fontSize + 'px';
+                    selected.style.fontWeight = fontWeight.toString();
+                    setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
+                }
+            }}>
+                Change
+            </button>
+        </div>
+    )
+}
 
 export default ComponentBuilder;
 
@@ -511,7 +620,7 @@ const Sidebar: React.FC<ToolbarProps> = ({ onInsert, setHtmlContent }) => {
             <AccordionItem
                 setOpened={setOpened}
                 opened={opened}
-                id={"5"}
+                id={"6"}
                 title="Change Flush"
                 content={<ChangeFlush setHtmlContent={setHtmlContent} />}
             />
@@ -521,6 +630,20 @@ const Sidebar: React.FC<ToolbarProps> = ({ onInsert, setHtmlContent }) => {
                 id={"7"}
                 title="Change Radius"
                 content={<ChangeRadius setHtmlContent={setHtmlContent} />}
+            />
+            <AccordionItem
+                setOpened={setOpened}
+                opened={opened}
+                id={"8"}
+                title="Color Editor"
+                content={<ColorEditor setHtmlContent={setHtmlContent} />}
+            />
+            <AccordionItem
+                setOpened={setOpened}
+                opened={opened}
+                id={"9"}
+                title="Font Editor"
+                content={<FontEditor setHtmlContent={setHtmlContent} />}
             />
         </div>
     );
