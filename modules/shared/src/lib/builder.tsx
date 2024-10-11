@@ -495,6 +495,63 @@ const FontEditor: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = 
     )
 }
 
+const SizeEditor: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
+    const [height, setHeight] = useState<string>('50');
+    const [width, setWidth] = useState<string>('50');
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label>
+                Height (px):
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                />
+            </label>
+            <br />
+            <label>
+                Height Input (px):
+                <input
+                    type="number"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                />
+            </label>
+            <label>
+                Width:
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={width}
+                    onChange={(e) => setWidth(e.target.value)}
+                />
+            </label>
+            <br />
+            <label>
+                Width Input:
+                <input
+                    type="number"
+                    value={width}
+                    onChange={(e) => setWidth(e.target.value)}
+                />
+            </label>
+            <button onClick={() => {
+                const selected = document.querySelector('.selected') as HTMLElement;
+                if (selected) {
+                    selected.style.height = height + 'px';
+                    selected.style.width = width + 'px';
+                    setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
+                }
+            }}>
+                Change
+            </button>
+        </div>
+    )
+}
+
 export default ComponentBuilder;
 
 
@@ -644,6 +701,13 @@ const Sidebar: React.FC<ToolbarProps> = ({ onInsert, setHtmlContent }) => {
                 id={"9"}
                 title="Font Editor"
                 content={<FontEditor setHtmlContent={setHtmlContent} />}
+            />
+            <AccordionItem
+                setOpened={setOpened}
+                opened={opened}
+                id={"10"}
+                title="Size Editor"
+                content={<SizeEditor setHtmlContent={setHtmlContent} />}
             />
         </div>
     );
