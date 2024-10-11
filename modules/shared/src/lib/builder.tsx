@@ -296,6 +296,7 @@ const ComponentBuilder: React.FC = () => {
     const [htmlContent, setHtmlContent] = useState<string>(html);
 
     const [saved, setSaved] = useState<string[]>([])
+    const [templateName, setTemplateName] = useState<string>('');
 
     const handleInsert = (htmlString: string) => {
         const parser = new DOMParser();
@@ -335,7 +336,7 @@ const ComponentBuilder: React.FC = () => {
         };
     }, []);
 
-    const exportHtml = () => {
+    const addToThread = () => {
         removeAllPreviousSelections()
         const container = document.getElementById('wrapper');
         if (!container) return;
@@ -354,6 +355,23 @@ const ComponentBuilder: React.FC = () => {
         container.style.padding = "16px"
     };
 
+    const downloadHtmlFile = (htmlContent: string, fileName: string) => {
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const exportHtml = () => {
+        const htmlContent = document.getElementById('wrapper')?.innerHTML || '';
+        downloadHtmlFile(htmlContent, `${templateName ?? 'msg-template'}.html`);
+    };
+
     return (
         <div className="component-builder" style={{ display: 'flex' }}>
             <div style={{ display: 'flex', flexDirection: 'column', width: '50%', alignContent: 'space-between' }}>
@@ -364,7 +382,16 @@ const ComponentBuilder: React.FC = () => {
                     <Sidebar onInsert={handleInsert} setHtmlContent={setHtmlContent} />
                 </div>
                 <div>
-                    <button style={{ marginTop: '16px' }} onClick={exportHtml}>Add to Thread</button>
+                    <button style={{ marginTop: '16px' }} onClick={addToThread}>Add to Thread</button>
+                    <label style={{ marginTop: '16px', marginLeft: '16px' }}>
+                        Template Name:
+                        <input
+                            type="text"
+                            value={templateName}
+                            onChange={(e) => setTemplateName(e.target.value)}
+                        />
+                    </label>
+                    <button style={{ marginTop: '16px', marginLeft: '16px' }} onClick={exportHtml}>Export</button>
                     <button style={{ marginTop: '16px', marginLeft: '16px' }} onClick={() => {
                         setHtmlContent(html)
                     }}>Reset</button>
