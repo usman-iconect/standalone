@@ -2,22 +2,83 @@ import React, { useState, FC } from 'react';
 import classNames from 'classnames';
 import { SketchPicker } from 'react-color'
 
+const DataMappingIds = {
+    AVATAR: "chat-avatar",
+    SENDER_NAME: "chat-sender-name",
+    SENDER_TITLE: "chat-sender-title",
+    SENT_TIME: "chat-sent-time",
+    SENT_DATE: "chat-sent-date",
+    READ_STATE: "chat-read-state",
+    MSG_CONTENT: "chat-message-content",
+    MSG_REPLY_COUNT: "chat-reply-count",
+    REACTION: "chat-reaction",
+}
+
+const loremIpsumWords = [
+    "lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing", "elit",
+    "sed", "do", "eiusmod", "tempor", "incididunt", "ut", "labore", "et", "dolore",
+    "magna", "aliqua", "ut", "enim", "ad", "minim", "veniam", "quis", "nostrud",
+    "exercitation", "ullamco", "laboris", "nisi", "ut", "aliquip", "ex", "ea",
+    "commodo", "consequat", "duis", "aute", "irure", "dolor", "in", "reprehenderit",
+    "in", "voluptate", "velit", "esse", "cillum", "dolore", "eu", "fugiat", "nulla",
+    "pariatur", "excepteur", "sint", "occaecat", "cupidatat", "non", "proident",
+    "sunt", "in", "culpa", "qui", "officia", "deserunt", "mollit", "anim", "id",
+    "est", "laborum"
+];
+
 type MessageHolderProps = {
     htmlContent: string;
-};
-
-const MessageHolder: FC<MessageHolderProps> = ({ htmlContent }) => {
-    return (
-        <div
-            className="message-holder"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
-        />
-    );
 };
 
 type ToolbarProps = {
     onInsert: (htmlString: string) => void;
     setHtmlContent: (htmlContent: string) => void;
+};
+
+interface AccordionItemProps {
+    title: string;
+    content: React.ReactNode;
+    setOpened: (id: string) => void;
+    id: string;
+    opened: string;
+}
+
+const generateRandomText = (minWords: number, maxWords: number): string => {
+    const wordCount = Math.floor(Math.random() * (maxWords - minWords + 1)) + minWords;
+    const randomWords = Array.from({ length: wordCount }, () => {
+        return loremIpsumWords[Math.floor(Math.random() * loremIpsumWords.length)];
+    });
+    return randomWords.join(' ');
+};
+
+const AccordionItem: React.FC<AccordionItemProps> = ({ title, content, setOpened, id, opened }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="accordion-item">
+            <div
+                className="accordion-title"
+                onClick={() => {
+                    setOpened(isOpen ? "" : id)
+                    setIsOpen(!isOpen)
+                }}
+                style={{ cursor: 'pointer', padding: '10px', backgroundColor: '#f1f1f1' }}
+            >
+                <h3 style={{ color: 'black' }}>{title}</h3>
+            </div>
+            <div
+                className={classNames('accordion-content', { 'open': (isOpen && opened === id) })}
+                style={{
+                    height: (isOpen && opened === id) ? 'auto' : '0',
+                    overflow: 'hidden',
+                    transition: 'height 0.3s ease',
+                    padding: (isOpen && opened === id) ? '10px' : '0',
+                }}
+            >
+                {content}
+            </div>
+        </div>
+    );
 };
 
 const MarginEditor: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
@@ -139,12 +200,47 @@ const InsertMetaData: React.FC<{ setHtmlContent: (htmlContent: string) => void }
     const [location, setLocation] = useState<string>('top');
 
     function getTextBasedOnDataType() {
-        if (data === 'date') {
-            return new Date().toLocaleDateString();
-        } else if (data === 'time') {
-            return new Date().toLocaleTimeString();
-        } else {
-            return 'John Doe';
+        switch (data) {
+            case 'time':
+                return new Date().toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            case 'date':
+                return new Date().toLocaleDateString([], {
+                    year: 'numeric',
+                    month: 'long' // or 'short' for abbreviated month
+                });
+            case 'name':
+                return 'John Doe';
+            case 'reply-count':
+                return '\u21A9\uFE0F' + '2';
+            case 'read-state':
+                return '\u2713';
+            case 'sender-title':
+                return 'admin';
+            default:
+                return '';
+        }
+    }
+
+    function getIdBasedOnDataType() {
+        switch (data) {
+            case 'date':
+                return DataMappingIds.SENT_DATE;
+            case 'time':
+                return DataMappingIds.SENT_TIME;
+            case 'name':
+                return DataMappingIds.SENDER_NAME;
+            case 'read-state':
+                return DataMappingIds.READ_STATE;
+            case 'reply-count':
+                return DataMappingIds.MSG_REPLY_COUNT;
+            case 'sender-title':
+                return DataMappingIds.SENDER_TITLE;
+            default:
+                return '';
         }
     }
 
@@ -156,6 +252,9 @@ const InsertMetaData: React.FC<{ setHtmlContent: (htmlContent: string) => void }
                     <option value="date">Date</option>
                     <option value="time">Time</option>
                     <option value="name">Name</option>
+                    <option value="sender-title">Sender Title</option>
+                    <option value="read-state">Read State</option>
+                    <option value="reply-count">Reply Count</option>
                 </select>
             </label>
             <br />
@@ -178,6 +277,7 @@ const InsertMetaData: React.FC<{ setHtmlContent: (htmlContent: string) => void }
                     const newElement = document.createElement('span');
                     newElement.innerText = getTextBasedOnDataType();
                     newElement.style.width = 'max-content';
+                    newElement.id = getIdBasedOnDataType()
                     const locationContainer = doc.getElementById(`container-${location}`);
                     if (locationContainer) {
                         locationContainer.appendChild(newElement);
@@ -277,144 +377,6 @@ const ChangeRadius: React.FC<{ setHtmlContent: (htmlContent: string) => void }> 
         </div>
     )
 }
-
-const ComponentBuilder: React.FC = () => {
-    const html = `
-        <div id="wrapper" class="wrapper" style="border: 1px solid #ccc; padding: 16px; position: relative; display: flex;">
-            <div id="message-box-outer">
-                <div id="container-outer-top" class="placeholder" style="display: flex"></div>
-                <div id="message-box" style="position: relative; max-width: 300px; padding: 8px; background-color: #e0f7fa; border-radius: 15px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);">
-                    <div id="container-top" class="placeholder" style="display: flex"></div>
-                    <p id="msg-container" style="margin: 0; color: #333;">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s<span id="container-right-corner-adjuster" style="visibility: hidden; padding-left:8px;"></span></p>
-                    <div id="container-bottom" class="placeholder" style="display: flex"></div>
-                    <div id="container-right-corner" style="position: absolute; bottom: 8px; right: 8px;"></div>
-                </div>
-                <div id="container-outer-bottom" class="placeholder" style="display: flex"></div>
-            </div>
-        </div>
-        `
-    const [htmlContent, setHtmlContent] = useState<string>(html);
-
-    const [saved, setSaved] = useState<string[]>([])
-    const [templateName, setTemplateName] = useState<string>('');
-
-    const handleInsert = (htmlString: string) => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlContent, 'text/html');
-        const parent = doc.querySelector("#wrapper")
-        const newElement = parser.parseFromString(htmlString, 'text/html').body.firstChild;
-        if (newElement && parent) {
-            parent.appendChild(newElement);
-        }
-        setHtmlContent(doc.body.innerHTML);
-    };
-
-    function removeAllPreviousSelections() {
-        const selectedList = document.getElementsByClassName('selected');
-        if (selectedList.length > 0) {
-            for (let i = 0; i < selectedList.length; i++) {
-                selectedList[i].classList.remove('selected');
-            }
-        }
-    }
-
-    React.useEffect(() => {
-        const handleClick = (e: MouseEvent) => {
-            const wrapper = document.getElementById("wrapper");
-            const target = e.target as HTMLElement;
-
-            if (wrapper && wrapper.contains(target)) {
-                removeAllPreviousSelections();
-                target.classList.add("selected");
-            }
-        };
-
-        document.addEventListener("click", handleClick);
-
-        return () => {
-            document.removeEventListener("click", handleClick);
-        };
-    }, []);
-
-    const addToThread = () => {
-        removeAllPreviousSelections()
-        const container = document.getElementById('wrapper');
-        if (!container) return;
-        container.style.border = "none";
-        container.style.padding = "0px"
-        const exportedHtml = container.outerHTML;
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(exportedHtml, 'text/html');
-        const msgElem = doc.getElementById("msg-container")
-        if (msgElem) {
-            const spanElement = msgElem.querySelector('span');
-            msgElem.innerHTML = generateRandomText(2, 20) + spanElement?.outerHTML
-        }
-        setSaved([...saved, doc.body.innerHTML])
-        container.style.border = "1px solid #ccc"
-        container.style.padding = "16px"
-    };
-
-    const downloadHtmlFile = (htmlContent: string, fileName: string) => {
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
-    const exportHtml = () => {
-        const htmlContent = document.getElementById('wrapper')?.innerHTML || '';
-        downloadHtmlFile(htmlContent, `${templateName ?? 'msg-template'}.html`);
-    };
-
-    return (
-        <div className="component-builder" style={{ display: 'flex' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', width: '50%', alignContent: 'space-between' }}>
-                <div style={{ display: 'flex' }}>
-                    <div className="preview" style={{ marginLeft: '20px' }}>
-                        <MessageHolder htmlContent={htmlContent} />
-                    </div>
-                    <Sidebar onInsert={handleInsert} setHtmlContent={setHtmlContent} />
-                </div>
-                <div>
-                    <button style={{ marginTop: '16px' }} onClick={addToThread}>Add to Thread</button>
-                    <label style={{ marginTop: '16px', marginLeft: '16px' }}>
-                        Template Name:
-                        <input
-                            type="text"
-                            value={templateName}
-                            onChange={(e) => setTemplateName(e.target.value)}
-                        />
-                    </label>
-                    <button style={{ marginTop: '16px', marginLeft: '16px' }} onClick={exportHtml}>Export</button>
-                    <button style={{ marginTop: '16px', marginLeft: '16px' }} onClick={() => {
-                        setHtmlContent(html)
-                    }}>Reset</button>
-                </div>
-            </div>
-            <div style={{
-                border: '1px dashed black',
-                width: '50%',
-                height: '850px',
-                display: 'flex',
-                flexDirection: 'column',
-                padding: '16px',
-                gap: '16px',
-                overflow: 'auto'
-            }}>
-                {saved.map((html, i) => {
-                    const span = <span style={{ width: 'max-content' }} key={i} dangerouslySetInnerHTML={{ __html: html }} />
-                    return span
-                })}
-            </div>
-        </div>
-    );
-};
 
 const ColorEditor: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
     const [color, setColor] = useState<string>('#000000');
@@ -579,65 +541,53 @@ const SizeEditor: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = 
     )
 }
 
-export default ComponentBuilder;
-
-
-const loremIpsumWords = [
-    "lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing", "elit",
-    "sed", "do", "eiusmod", "tempor", "incididunt", "ut", "labore", "et", "dolore",
-    "magna", "aliqua", "ut", "enim", "ad", "minim", "veniam", "quis", "nostrud",
-    "exercitation", "ullamco", "laboris", "nisi", "ut", "aliquip", "ex", "ea",
-    "commodo", "consequat", "duis", "aute", "irure", "dolor", "in", "reprehenderit",
-    "in", "voluptate", "velit", "esse", "cillum", "dolore", "eu", "fugiat", "nulla",
-    "pariatur", "excepteur", "sint", "occaecat", "cupidatat", "non", "proident",
-    "sunt", "in", "culpa", "qui", "officia", "deserunt", "mollit", "anim", "id",
-    "est", "laborum"
-];
-
-const generateRandomText = (minWords: number, maxWords: number): string => {
-    const wordCount = Math.floor(Math.random() * (maxWords - minWords + 1)) + minWords;
-    const randomWords = Array.from({ length: wordCount }, () => {
-        return loremIpsumWords[Math.floor(Math.random() * loremIpsumWords.length)];
-    });
-    return randomWords.join(' ');
-};
-
-
-interface AccordionItemProps {
-    title: string;
-    content: React.ReactNode;
-    setOpened: (id: string) => void;
-    id: string;
-    opened: string;
+const InsetItems: React.FC<{ onInsert: (htmlContent: string) => void }> = ({ onInsert }) => {
+    return <button onClick={() => {
+        const htmlString = `<div id="${DataMappingIds.AVATAR}" style="width: 50px; height: 50px; border-radius: 50%; background-color: #ccc; display: flex; justify-content: center; align-items: center;" class="msg-comp avatar">AB</div>`;
+        onInsert(htmlString)
+    }}>Insert Avatar</button>
 }
 
-const AccordionItem: React.FC<AccordionItemProps> = ({ title, content, setOpened, id, opened }) => {
-    const [isOpen, setIsOpen] = useState(false);
-
+const QuicActions: React.FC<{ setHtmlContent: (htmlContent: string) => void }> = ({ setHtmlContent }) => {
     return (
-        <div className="accordion-item">
-            <div
-                className="accordion-title"
-                onClick={() => {
-                    setOpened(isOpen ? "" : id)
-                    setIsOpen(!isOpen)
-                }}
-                style={{ cursor: 'pointer', padding: '10px', backgroundColor: '#f1f1f1' }}
-            >
-                <h3 style={{ color: 'black' }}>{title}</h3>
-            </div>
-            <div
-                className={classNames('accordion-content', { 'open': (isOpen && opened === id) })}
-                style={{
-                    height: (isOpen && opened === id) ? 'auto' : '0',
-                    overflow: 'hidden',
-                    transition: 'height 0.3s ease',
-                    padding: (isOpen && opened === id) ? '10px' : '0',
-                }}
-            >
-                {content}
-            </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => {
+                const selectedElement = document.querySelector('.selected') as HTMLElement;
+                if (selectedElement)
+                    selectedElement.remove();
+                setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
+            }}>Delete selected</button>
+            <button onClick={() => {
+                const selectedElement = document.querySelector('.selected') as HTMLElement;
+                if (selectedElement) {
+                    const children = selectedElement.children;
+                    for (let i = children.length; i > 0; i--) {
+                        selectedElement.appendChild(children[i - 1]);
+                    }
+                }
+                setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
+            }}>Flip Items</button>
+            <button onClick={() => {
+                const selectedElement = document.querySelector('.selected') as HTMLElement;
+                if (selectedElement) {
+                    const parent = selectedElement.parentElement;
+                    selectedElement.classList.remove('selected');
+                    if (parent) {
+                        parent.classList.add('selected');
+                    }
+                }
+                setHtmlContent(document.getElementById('wrapper')?.outerHTML || '');
+            }}>Select Parent</button>
         </div>
+    )
+}
+
+const MessageHolder: FC<MessageHolderProps> = ({ htmlContent }) => {
+    return (
+        <div
+            className="message-holder"
+            dangerouslySetInnerHTML={{ __html: htmlContent }}
+        />
     );
 };
 
@@ -650,10 +600,7 @@ const Sidebar: React.FC<ToolbarProps> = ({ onInsert, setHtmlContent }) => {
                 opened={opened}
                 id={"1"}
                 title="Insert Items"
-                content={<button onClick={() => {
-                    const htmlString = `<div style="width: 50px; height: 50px; border-radius: 50%; background-color: #ccc; display: flex; justify-content: center; align-items: center;" class="msg-comp avatar">AB</div>`;
-                    onInsert(htmlString)
-                }}>Insert Avatar</button>}
+                content={<InsetItems onInsert={onInsert} />}
             />
             <AccordionItem
                 setOpened={setOpened}
@@ -683,23 +630,7 @@ const Sidebar: React.FC<ToolbarProps> = ({ onInsert, setHtmlContent }) => {
                 opened={opened}
                 id={"5"}
                 title="Quick Actions"
-                content={
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={() => {
-                            const selectedElement = document.querySelector('.selected') as HTMLElement;
-                            if (selectedElement)
-                                selectedElement.remove();
-                        }}>Delete selected</button>
-                        <button onClick={() => {
-                            const selectedElement = document.querySelector('.selected') as HTMLElement;
-                            if (selectedElement) {
-                                const children = selectedElement.children;
-                                for (let i = children.length; i > 0; i--) {
-                                    selectedElement.appendChild(children[i - 1]);
-                                }
-                            }
-                        }}>Flip Items</button>
-                    </div>}
+                content={<QuicActions setHtmlContent={setHtmlContent} />}
             />
             <AccordionItem
                 setOpened={setOpened}
@@ -739,3 +670,143 @@ const Sidebar: React.FC<ToolbarProps> = ({ onInsert, setHtmlContent }) => {
         </div>
     );
 };
+
+const ComponentBuilder: React.FC = () => {
+    const html = `
+        <div id="wrapper" class="wrapper" style="border: 1px solid #ccc; padding: 16px; position: relative; display: flex;">
+            <div id="message-box-outer">
+                <div id="container-outer-top" class="placeholder" style="display: flex"></div>
+                <div id="message-box" style="position: relative; max-width: 300px; padding: 8px; background-color: #e0f7fa; border-radius: 15px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);">
+                    <div id="container-top" class="placeholder" style="display: flex"></div>
+                    <div id="${DataMappingIds.MSG_CONTENT}" style="margin: 0; color: #333;">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s<span id="container-right-corner-adjuster" style="visibility: hidden; padding-left:8px;"></span></div>
+                    <div id="container-bottom" class="placeholder" style="display: flex"></div>
+                    <div id="container-right-corner" style="position: absolute; bottom: 8px; right: 8px;"></div>
+                </div>
+                <div id="container-outer-bottom" class="placeholder" style="display: flex"></div>
+            </div>
+        </div>
+        `
+    const [htmlContent, setHtmlContent] = useState<string>(html);
+
+    const [saved, setSaved] = useState<string[]>([])
+    const [templateName, setTemplateName] = useState<string>('');
+
+    const handleInsert = (htmlString: string) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, 'text/html');
+        const parent = doc.querySelector("#wrapper")
+        const newElement = parser.parseFromString(htmlString, 'text/html').body.firstChild;
+        if (newElement && parent) {
+            parent.appendChild(newElement);
+        }
+        setHtmlContent(doc.body.innerHTML);
+    };
+
+    function removeAllPreviousSelections() {
+        const selectedList = document.getElementsByClassName('selected');
+        if (selectedList.length > 0) {
+            for (let i = 0; i < selectedList.length; i++) {
+                selectedList[i].classList.remove('selected');
+            }
+        }
+    }
+
+    React.useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            const wrapper = document.getElementById("wrapper");
+            const target = e.target as HTMLElement;
+
+            if (wrapper && wrapper.contains(target)) {
+                removeAllPreviousSelections();
+                target.classList.add("selected");
+            }
+        };
+
+        document.addEventListener("click", handleClick);
+
+        return () => {
+            document.removeEventListener("click", handleClick);
+        };
+    }, []);
+
+    const addToThread = () => {
+        removeAllPreviousSelections()
+        const container = document.getElementById('wrapper');
+        if (!container) return;
+        container.style.border = "none";
+        container.style.padding = "0px"
+        const exportedHtml = container.outerHTML;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(exportedHtml, 'text/html');
+        const msgElem = doc.getElementById(DataMappingIds.MSG_CONTENT)
+        if (msgElem) {
+            const spanElement = msgElem.querySelector('span');
+            msgElem.innerHTML = generateRandomText(2, 20) + spanElement?.outerHTML
+        }
+        setSaved([...saved, doc.body.innerHTML])
+        container.style.border = "1px solid #ccc"
+        container.style.padding = "16px"
+    };
+
+    const downloadHtmlFile = (htmlContent: string, fileName: string) => {
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const exportHtml = () => {
+        const htmlContent = document.getElementById('wrapper')?.innerHTML || '';
+        downloadHtmlFile(htmlContent, `${templateName ?? 'msg-template'}.html`);
+    };
+
+    return (
+        <div className="component-builder" style={{ display: 'flex' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '50%', alignContent: 'space-between' }}>
+                <div style={{ display: 'flex' }}>
+                    <div className="preview" style={{ marginLeft: '20px' }}>
+                        <MessageHolder htmlContent={htmlContent} />
+                    </div>
+                    <Sidebar onInsert={handleInsert} setHtmlContent={setHtmlContent} />
+                </div>
+                <div>
+                    <button style={{ marginTop: '16px' }} onClick={addToThread}>Add to Thread</button>
+                    <label style={{ marginTop: '16px', marginLeft: '16px' }}>
+                        Template Name:
+                        <input
+                            type="text"
+                            value={templateName}
+                            onChange={(e) => setTemplateName(e.target.value)}
+                        />
+                    </label>
+                    <button style={{ marginTop: '16px', marginLeft: '16px' }} onClick={exportHtml}>Export</button>
+                    <button style={{ marginTop: '16px', marginLeft: '16px' }} onClick={() => {
+                        setHtmlContent(html)
+                    }}>Reset</button>
+                </div>
+            </div>
+            <div style={{
+                border: '1px dashed black',
+                width: '50%',
+                height: '850px',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '16px',
+                gap: '16px',
+                overflow: 'auto'
+            }}>
+                {saved.map((html, i) => {
+                    const span = <span style={{ width: 'max-content' }} key={i} dangerouslySetInnerHTML={{ __html: html }} />
+                    return span
+                })}
+            </div>
+        </div>
+    );
+};
+
+export default ComponentBuilder;
